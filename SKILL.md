@@ -15,6 +15,7 @@ Automated domain auction scouting for build-and-flip opportunities on GoDaddy Au
 Before executing, read these reference files for detailed scoring and UI automation:
 - `~/.claude/skills/auction-scout/references/scoring-rubric.md` - Scoring weights, thresholds, and action table
 - `~/.claude/skills/auction-scout/references/godaddy-ui-flow.md` - Chrome automation cookbook for GoDaddy
+- `~/.claude/skills/auction-scout/references/niche-map.md` - Existing properties by niche (for 301 redirect bonus scoring)
 - `~/.claude/skills/auction-scout/data/state.json` - Config and persistent state
 
 ## Arguments
@@ -128,7 +129,15 @@ Using data from the GoDaddy scrape (TF, CF, age, estValue, price), calculate the
 
 Tally all risk deductions found above. Start at 30, subtract.
 
-#### 4g. Record Tier 2 Results
+#### 4g. Niche Match Check (301 Redirect Value)
+
+Check if the domain's name or niche aligns with any existing property in `references/niche-map.md`. A strong niche match means the domain can be 301-redirected to pass backlink authority to an existing site — the domain doesn't need a standalone product concept, the backlinks ARE the value.
+
+Apply the redirect bonus per the niche-map scoring table (up to +8 to Buildability, capped at 35 total). Note the target redirect property in the report.
+
+A domain that scores poorly on Product-Market Fit can still be worth buying if it has strong backlinks and matches an existing niche.
+
+#### 4h. Record Tier 2 Results
 
 Store research findings and partial scores for each domain. Domains scoring below 40 at this point are dropped.
 
