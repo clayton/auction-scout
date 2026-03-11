@@ -1,0 +1,24 @@
+{
+  "config": {
+    "mode": "dry-run",
+    "max_bid_usd": 50,
+    "hard_cap_usd": 100,
+    "outlier_min_score": 90,
+    "auto_bid_min_score": 75,
+    "weekly_budget_usd": 200,
+    "slack_webhook": "",
+    "report_dir": "~/.claude/skills/auction-scout/data/reports",
+    "saved_search_name": "search001"
+  },
+  "last_run": {
+    "timestamp": "",
+    "type": "",
+    "domains_scraped": 0
+  },
+  "active_candidates": [],
+  "bids_placed": [],
+  "purchases": [],
+  "spend_today_usd": 0,
+  "spend_this_week_usd": 0,
+  "week_start_date": ""
+}

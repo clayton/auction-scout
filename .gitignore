@@ -1,0 +1,5 @@
+# Runtime state and scraped data
+data/state.json
+data/raw-scrape-*.csv
+data/raw-scrape-*.json
+data/reports/
