@@ -1,11 +1,11 @@
 ---
 name: auction-scout
-description: Scout GoDaddy domain auctions for undervalued build-and-flip domains. Scrapes saved search, researches reputation/buildability, scores domains, and auto-bids on high scorers. Run via /loop 12h /auction-scout for morning + evening passes.
+description: Scout GoDaddy domain auctions for undervalued build-and-flip domains. Scrapes saved search, researches reputation/buildability, scores domains, and posts qualifying domains to Slack for manual purchase decision. Run via /loop 12h /auction-scout for morning + evening passes.
 ---
 
 # Auction Scout
 
-Automated domain auction scouting for build-and-flip opportunities on GoDaddy Auctions.
+Domain auction scouting for build-and-flip opportunities on GoDaddy Auctions. Scrapes, researches, and scores domains, then **posts qualifying domains to Slack** for the owner to review and manually purchase. No auto-bidding.
 
 **Target domains:** Micro-SaaS, programmatic SEO, info products, iOS apps.
 **NOT interested in:** Communities, forums, social networks, marketplaces.
@@ -22,9 +22,9 @@ Before executing, read these reference files for detailed scoring and UI automat
 
 | Argument | Behavior |
 |----------|----------|
-| `morning` | Full morning pass (scrape + research + score + bid) |
-| `evening` | Evening pass (update prices, re-evaluate, final bids) |
-| `dry-run` | Force dry-run mode regardless of state.json config |
+| `morning` | Full morning pass (scrape + research + score + Slack alert) |
+| `evening` | Evening pass (update prices, re-evaluate, Slack update) |
+| `dry-run` | Skip Slack posting, just generate report locally |
 | `report` | Just show today's report without running a pass |
 | _(none)_ | Auto-detect: if last run was >8 hours ago or no run today, morning; otherwise evening |
 
@@ -35,16 +35,15 @@ Before executing, read these reference files for detailed scoring and UI automat
 ### Step 1: Initialize
 
 1. Read `~/.claude/skills/auction-scout/data/state.json`
-2. Check if `mode` is `dry-run` or `live` (argument `dry-run` overrides to dry-run)
-3. Reset `spend_today_usd` if date changed since last run
-4. Reset `spend_this_week_usd` if new week (Monday)
-5. Clear `active_candidates` from previous day
+2. Reset `spend_today_usd` if date changed since last run
+3. Reset `spend_this_week_usd` if new week (Monday)
+4. Clear `active_candidates` from previous day
 
 ### Step 2: Scrape GoDaddy Auctions
 
 Use Chrome automation (claude-in-chrome tools) following `references/godaddy-ui-flow.md`.
 
-1. Navigate to `https://auctions.godaddy.com/trpSearchResults.aspx`
+1. Navigate to `https://auctions.godaddy.com/beta`
 2. **Screenshot** - verify logged in. If not logged in:
    - Send Slack alert: "GoDaddy login expired - auction scout cannot run"
    - Write error to state.json and EXIT
@@ -53,8 +52,16 @@ Use Chrome automation (claude-in-chrome tools) following `references/godaddy-ui-
 5. Extract domains from ALL pages using the JS extraction snippet from godaddy-ui-flow.md
    - Navigate through all pages (typically 4 pages of 150)
    - Combine all results
-6. Save raw data to `~/.claude/skills/auction-scout/data/raw-scrape-YYYY-MM-DD-morning.json`
-7. Update `state.json`: `last_run.timestamp`, `last_run.type = "morning"`, `last_run.domains_scraped`
+
+#### 2b. Supplementary Searches
+
+After scraping search001, run two additional searches (see godaddy-ui-flow.md "Supplementary Search Strategies" for filter details):
+
+6. **High-TF Sweep**: No keyword, TF 20+, .com, Expiring+Closeouts, max $100. Typically ~5-15 results. Every result is worth evaluating.
+7. **Hidden Gems**: No keyword, Top Picks = Hidden Gems, TF 10+, .com, Expiring+Closeouts, max $100. Typically ~150 results. GoDaddy's curated undervalued domains.
+8. De-duplicate across all three searches (by domain name)
+9. Save combined raw data to `~/.claude/skills/auction-scout/data/raw-scrape-YYYY-MM-DD-morning.json`
+10. Update `state.json`: `last_run.timestamp`, `last_run.type = "morning"`, `last_run.domains_scraped`
 
 ### Step 3: Tier 1 - Quick Filter (~600 -> ~50)
 
@@ -190,32 +197,54 @@ Combine: Name Quality + Product-Market Fit + Niche Opportunity
 Final Score = Domain Quality (0-35) + Buildability (0-35) + Risk (0-30)
 ```
 
-### Step 6: Bidding
+### Step 6: Slack Alert (No Auto-Bidding)
 
-Read action thresholds from scoring rubric. For each domain meeting bid threshold:
+**The skill NEVER places bids or purchases domains.** Instead, it posts qualifying domains to Slack so the owner can review and manually decide whether to buy.
 
-1. **Check budget**: Compare `spend_this_week_usd` against `weekly_budget_usd`
-   - If >= 80% of weekly budget spent, only bid on 90+ scores
-   - If >= 100%, do not bid at all
+For each domain scoring 75+, send a Slack message to the `#domain-scout` channel using the Slack MCP tool (`mcp__plugin_slack_slack__slack_send_message`).
 
-2. **Determine max bid** per score thresholds:
-   - 75-84: up to $30
-   - 85-89: up to $50
-   - 90-100: up to $100
+#### Slack Message Format
 
-3. **If mode = "dry-run"**:
-   - Log what WOULD be bid, but don't actually place bids
-   - Include in report as "[DRY RUN] Would bid $X on domain.com (score: Y)"
+Send one message per qualifying domain, formatted as:
 
-4. **If mode = "live"**:
-   - Navigate to domain's auction page in Chrome
-   - **Screenshot** to verify current price matches expected price
-   - If price has changed significantly (>20% increase), re-evaluate
-   - Place bid using Chrome automation (see godaddy-ui-flow.md)
-   - **Screenshot** after bid to confirm
-   - Update `state.json`: add to `bids_placed`, update `spend_today_usd` and `spend_this_week_usd`
+```
+*[DOMAIN ALERT]* domain.com — Score: XX/100
 
-5. Add all scored domains (65+) to `active_candidates` in state.json for evening pass
+*Price:* $XX | *Est Value:* $XXX | *Age:* X yrs
+*Majestic:* TF XX, CF XX, TF/CF X.XX | *Referring Domains:* XX
+*Score Breakdown:* Quality XX/35 | Build XX/35 | Risk XX/30
+
+*Niche Match:* [niche] -> [target property] (or "None")
+*Product Concept:* [1-line description of best concept]
+*Risk Notes:* [any flags, or "Clean"]
+
+*Suggested Max Bid:* $XX (score tier: 75-84=$30, 85-89=$50, 90+=$100)
+
+:link: https://auctions.godaddy.com/beta?domain=domain.com
+```
+
+After all individual domain alerts, send a summary message:
+
+```
+*Auction Scout — YYYY-MM-DD Morning Pass*
+Scraped: N domains | Passed Tier 1: N | Researched: N | Scored 75+: N
+Weekly spend so far: $XX
+
+Qualifying domains posted above ^^
+Full report: see thread
+```
+
+Reply to the summary message in a thread with the full day's report (domains scoring 50+, interesting domains, skipped domains table).
+
+#### Also post domains scoring 65-74 as a watch list in the thread:
+
+```
+*[WATCH LIST]* Interesting domains (65-74, below bid threshold):
+• domain1.com (score: XX, $XX) — brief note
+• domain2.com (score: XX, $XX) — brief note
+```
+
+Add all scored domains (65+) to `active_candidates` in state.json for evening pass.
 
 ### Step 7: Generate Report
 
@@ -230,8 +259,8 @@ Create `~/.claude/skills/auction-scout/data/reports/YYYY-MM-DD.md`:
 - **Passed Tier 1**: N
 - **Passed Tier 2**: N
 - **Deep evaluated (Tier 3)**: N
-- **Bids placed**: N
-- **Weekly spend**: $X / $200
+- **Domains posted to Slack**: N
+- **Weekly spend**: $X (manual purchases only)
 
 ## Top Scored Domains
 
@@ -242,45 +271,34 @@ Create `~/.claude/skills/auction-scout/data/reports/YYYY-MM-DD.md`:
 - **Product concepts**:
   1. Concept 1 - brief description
   2. Concept 2 - brief description
-- **Action**: [BID $XX / DRY RUN / SKIP / INTERESTING]
+- **Action**: [ALERTED / WATCH / SKIP]
 - **Risk notes**: any flags found
 
 (repeat for all domains scoring 50+)
 
-## Interesting Domains (scored 65-74, no bid)
+## Interesting Domains (scored 65-74, watch list)
 - domain1.com (score: XX) - brief note
 - domain2.com (score: XX) - brief note
 
 ## Skipped Notable Domains
 - domain.com - reason (active business / blacklisted / trademark)
 
-## Bids Placed
-| Domain | Score | Bid Amount | Current Price | Status |
-|--------|-------|------------|---------------|--------|
-| ... | ... | ... | ... | ... |
+## Domains Alerted to Slack
+| Domain | Score | Current Price | Suggested Max | Link |
+|--------|-------|---------------|---------------|------|
+| ... | ... | ... | ... | GoDaddy link |
 ```
 
 ### Step 8: Slack Notification
 
-If `config.slack_webhook` is set, send a summary:
-
-```bash
-curl -s -X POST "$SLACK_WEBHOOK" \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "text": "Auction Scout Morning Pass Complete\n- Scraped: N domains\n- Top scorer: domain.com (XX pts)\n- Bids placed: N ($XX total)\n- Mode: dry-run/live"
-  }'
-```
-
-If no webhook configured, just output the summary to the console.
+Slack alerts are sent in Step 6. If Step 6 Slack delivery failed for any reason, retry here. Also output a brief summary to the console confirming what was posted to Slack.
 
 ### Step 9: Update State
 
 Write updated `state.json` with:
 - `last_run` timestamp and type
 - `active_candidates` (domains scoring 65+ for evening follow-up)
-- Updated spend tracking
-- Any bids placed
+- `domains_alerted` (domains posted to Slack this run)
 
 ---
 
@@ -299,48 +317,56 @@ Write updated `state.json` with:
    - Check time remaining
    - Has price changed? Has someone outbid us?
 
-### Step 3: Re-evaluate
-For domains where we've been outbid:
-- Is it still worth bidding at the new price?
-- Re-score with updated price
-- If still above threshold, decide on re-bid
+### Step 3: Re-evaluate & Slack Update
 
-For domains with < 2 hours remaining:
-- Final bid-or-abandon decision
-- If we're winning, no action needed
-- If we're losing and score is 80+, consider increasing bid
+For domains with significant price changes:
+- Re-score with updated price
+- If a domain has dropped below bid threshold, note it
+- If a domain's price dropped significantly making it more attractive, flag it
+
+Send a Slack update to `#domain-scout` with price changes:
+
+```
+*Auction Scout — Evening Update*
+
+*Price Changes:*
+• domain.com: $XX -> $XX (score XX, time left: Xh)
+• domain.com: GONE (auction ended)
+
+*Still Available (score 75+):*
+• domain.com ($XX, score XX, Xh left) — https://auctions.godaddy.com/beta?domain=domain.com
+
+*New opportunities (if any):*
+• domain.com ($XX, score XX) — brief note
+```
 
 ### Step 4: New Listings Quick Scan
 1. Load saved search again
 2. Compare against morning's raw scrape
 3. Any new domains? Run quick Tier 1 filter
 4. If any new domains pass Tier 1 with high quick_score, do abbreviated Tier 2 research
+5. Post any new qualifying domains (75+) to Slack as individual alerts (same format as morning Step 6)
 
-### Step 5: Place Final Bids
-Same bidding logic as morning pass Step 6, but with updated prices.
-
-### Step 6: Update Report
+### Step 5: Update Report
 Append evening section to today's report:
 
 ```markdown
 ## Evening Update
 
 ### Price Changes
-| Domain | Morning Price | Evening Price | Our Bid | Status |
-|--------|--------------|---------------|---------|--------|
+| Domain | Morning Price | Evening Price | Score | Status |
+|--------|--------------|---------------|-------|--------|
 
 ### New Listings Found
 - domain.com (quick score: XX) - brief assessment
 
-### Final Bids
-| Domain | Score | Bid Amount | Action |
-|--------|-------|------------|--------|
+### Recommendations
+| Domain | Score | Price | Action |
+|--------|-------|-------|--------|
+| ... | ... | ... | Recommended / Watch / Pass |
 ```
 
-### Step 7: Slack Update
-Send evening summary to Slack webhook.
-
-### Step 8: Update State
+### Step 6: Update State
 Update `state.json` with evening results.
 
 ---
@@ -362,14 +388,13 @@ When argument is `report`:
 - **Chrome not responding**: Retry once after 10 seconds. If still failing, EXIT with error.
 - **DataForSEO unavailable**: Skip backlink analysis, note in report. Don't fail the whole run.
 - **Blacklist script timeout**: Allow 10 seconds per domain. Skip on timeout, note in report.
-- **Budget exceeded**: Log but don't bid. Make this clear in the report.
+- **Slack MCP unavailable**: Fall back to outputting results to console. Note in report that Slack delivery failed.
 
 ## Important Rules
 
-1. **NEVER bid on a domain with an active business** - this is the single most important rule
-2. **NEVER exceed the hard cap ($100)** regardless of score
-3. **NEVER exceed weekly budget** - track carefully in state.json
-4. **Always screenshot before bidding** - create audit trail
-5. **In dry-run mode, NEVER place real bids** - log only
-6. **If anything feels wrong, err on the side of not bidding**
-7. **Clean up old raw scrape files** - keep only last 7 days of raw-scrape JSON files
+1. **NEVER place bids or purchase domains** - only post to Slack for the owner to decide
+2. **NEVER recommend a domain with an active business** - this is the most important research rule
+3. **Always post qualifying domains (75+) to Slack `#domain-scout`** with full details and GoDaddy link
+4. **If anything feels wrong about a domain, err on the side of not recommending it**
+5. **Clean up old raw scrape files** - keep only last 7 days of raw-scrape JSON files
+6. **Track spend in state.json** when the owner reports a manual purchase (update `purchases`, `spend_today_usd`, `spend_this_week_usd`)

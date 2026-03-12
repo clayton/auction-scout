@@ -168,12 +168,13 @@ Wayback history showing: doorway pages, PBN content, Japanese/Chinese spam, phar
 | 0-49 | Skip | - |
 | 50-64 | Log in report only | - |
 | 65-74 | Flag as "interesting", no bid | - |
-| 75-84 | Auto-bid | $30 |
-| 85-89 | Auto-bid | $50 |
-| 90-100 | Auto-bid (outlier) | $100 |
+| 75-84 | Slack alert | $30 |
+| 85-89 | Slack alert (priority) | $50 |
+| 90-100 | Slack alert (outlier) | $100 |
 
-### Budget Guards
-- Weekly budget cap: $200 (configurable in state.json)
-- Daily spend tracking in state.json
-- Never exceed hard cap of $100 per domain regardless of score
-- If weekly budget is 80%+ spent, only bid on 90+ scores
+### Suggested Max Bids
+These are included in the Slack alert so the owner knows the recommended ceiling:
+- Score 75-84: suggest up to $30
+- Score 85-89: suggest up to $50
+- Score 90-100: suggest up to $100
+- Never suggest more than $100 per domain regardless of score

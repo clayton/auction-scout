@@ -141,3 +141,84 @@ For fixed-price (closeout) domains:
 - Don't navigate pages too quickly - add 2-3 second waits between page loads
 - GoDaddy may show CAPTCHA if you scrape too aggressively
 - If CAPTCHA appears -> Slack alert and EXIT
+
+---
+
+## Supplementary Search Strategies
+
+Beyond the primary saved search "search001", run these additional searches to broaden the candidate pool.
+
+### Strategy 2: Hidden Gems (GoDaddy Curated)
+
+GoDaddy's "Hidden Gems" filter surfaces undervalued domains they've identified. Combined with our filters, this catches domains search001 might miss.
+
+**Filters:**
+- Top Picks: Hidden Gems (checked)
+- Type: Expiring Auctions + Closeouts (Buy Now)
+- Extensions: .com
+- Price: Max $100
+- Majestic TF: Min 10
+- No keyword (empty search box)
+
+Typical yield: ~150 results. Many are local businesses (skip), but gems surface — look for brandable names with product potential or niche-match redirect value.
+
+### Strategy 3: High-TF Quality Sweep
+
+Catches the highest-authority domains expiring today regardless of niche. Small result set but highest redirect value potential.
+
+**Filters:**
+- Type: Expiring Auctions + Closeouts (Buy Now)
+- Extensions: .com
+- Price: Max $100
+- Majestic TF: Min 20
+- No keyword (empty search box)
+
+Typical yield: 5-15 results. Every result is worth evaluating since TF 20+ is rare at this price point.
+
+### Strategy 4: Niche Keyword Searches
+
+Search for keywords matching our existing properties (from niche-map.md) to find 301 redirect candidates.
+
+**Filters:**
+- Type: Expiring Auctions + Closeouts (Buy Now)
+- Extensions: .com
+- Price: Max $100
+- Majestic TF: Min 10
+- Keyword: rotate through niche terms
+
+**Good keyword groups (typically return 10-50 results):**
+- `photo`, `image`, `design` (AI Image niche)
+- `study`, `learn`, `quiz` (Education niche)
+- `habit`, `tracker`, `reminder` (Habits/Productivity niche)
+- `recipe`, `cook`, `food` (Info product potential)
+- `fitness`, `workout`, `health` (Proven spending niche)
+- `dog`, `pet`, `cat` (Proven spending niche)
+
+**Keywords that don't work well (too narrow with TF filter):**
+- `invoice`, `boilerplate`, `flashcard` — too specific, 0 results
+- `email` — returns only premium domains out of budget
+
+### Search Execution Order (Morning Pass)
+
+1. **search001** (primary) — the bulk pipeline (~600 domains)
+2. **High-TF Sweep** (Strategy 3) — quick, high-value (~5-15 domains)
+3. **Hidden Gems** (Strategy 2) — curated supplement (~150 domains)
+4. De-duplicate across all searches before Tier 1 filtering
+
+Strategies 2-3 add ~10 minutes to the morning pass but can surface domains that search001 misses (different price range, different TF threshold, GoDaddy curation).
+
+### Advanced Search Filter Setup via Chrome
+
+To set up Advanced Search filters:
+1. Click "Advanced Search" next to the search bar
+2. Click each filter dropdown to configure:
+   - **Type**: Check "Expiring Auctions" and optionally "Closeouts (Buy Now)"
+   - **Price**: Enter Max price in "Max price ($)" field
+   - **Extensions**: Check ".com" under Common Extensions
+   - **Majestic**: Enter Min TF in "Majestic TF" Min field
+   - **Top Picks**: Check "Hidden Gems" (for Strategy 2 only)
+3. Click "Apply Filters" (button turns black when filters are ready)
+4. Active filters show as teal/green buttons
+5. "Clear Filters" resets all filters
+
+**Note:** Changing the search keyword and clicking the search icon preserves active filters. You can swap keywords without re-setting filters.

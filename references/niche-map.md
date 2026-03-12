@@ -13,7 +13,6 @@ Domains we already own, organized by niche. When an expiring domain is a strong 
 
 ### Email / AI Assistant
 - emailsnapshot.com — email tool
-- aikoemail.com — AI email
 - aikoassistant.com — AI assistant
 
 **Match keywords:** email, inbox, mail, newsletter, outreach, assistant, AI helper, productivity AI, writing AI
@@ -29,7 +28,6 @@ Domains we already own, organized by niche. When an expiring domain is a strong 
 **Match keywords:** flashcard, study, learn, quiz, exam, test prep, tutor, education, memorize, vocabulary, language learning
 
 ### Productivity / Project Management
-- agileweekly.com — agile content
 - flowtopic.com — content/topic flow
 - saltstackapp.com — productivity app
 
@@ -45,11 +43,6 @@ Domains we already own, organized by niche. When an expiring domain is a strong 
 
 **Match keywords:** cruise, travel, vacation, ship, sailing, cruise tips, cruise accessories, cabin, port
 
-### Card Games / Gaming
-- openfacechinesepokers.com — OFC poker
-
-**Match keywords:** poker, card game, casino, gaming, cards, strategy game
-
 ### Habits / Reminders / Self-Improvement
 - nudglyapp.com — nudge/reminder app
 
@@ -59,16 +52,6 @@ Domains we already own, organized by niche. When an expiring domain is a strong 
 - stampbrain.com — stamp collecting
 
 **Match keywords:** stamp, philately, collecting, postage, rare stamps, stamp value
-
-### Books / Reading
-- youmustreadthis.com — book recommendations
-
-**Match keywords:** book, reading, review, recommendation, literature, ebook, author, bestseller, book club
-
-### News / Media
-- verybasic.news — news
-
-**Match keywords:** news, current events, headlines, journalism, media
 
 ---
 
